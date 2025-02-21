@@ -1,0 +1,60 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+
+#action的名字
+name: Python application
+#on表示event触发器，也就是在main分支推送代码/提交pr时会触发这个action
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+#这个action需要的权限：只会读仓库内容，不会修改仓库代码
+permissions:
+  contents: read
+#所有job
+jobs:
+#只有一个job：build
+  build:
+#action运行的虚拟环境：这个job向github申请了最新的ubuntu系统的虚拟机，用来运行job
+    runs-on: ubuntu-latest
+#job的所有步骤
+    steps:
+    #uses使用action：checkout，这是一个最常用的别人写好的aciton。
+    #checkout：检出代码：把项目代码检出到ubuntu虚拟机里面
+    - uses: actions/checkout@v4
+    #往虚拟机安装python环境
+    - name: Set up Python 3.10
+      uses: actions/setup-python@v3
+      #用with给上面的action传递参数
+      with:
+        python-version: "3.10"
+        #安装依赖
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8 pytest
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        #使用flake8对代码进行规范格式化
+    - name: Lint with flake8
+      run: |
+        # stop the build if there are Python syntax errors or undefined names
+        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        #使用pytest对代码进行测试，不需要，把下面三行注释了
+    #- name: Test with pytest
+     # run: |
+      #  pytest
+  pyinstaller-build:
+    runs-on: windows-latest
+    steps:
+      - name: Create Executable
+        uses: sayyid5416/pyinstaller@v1
+        with:
+          python_ver: '3.12'
+          #入口文件
+          spec: 'main.py'
+          #打包后的压缩包的名字
+          upload_exe_with_name: 'wgk_package'
+          options: --onefile
