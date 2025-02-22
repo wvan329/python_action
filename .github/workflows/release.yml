@@ -1,0 +1,35 @@
+#定义这个workflow的名字
+name: Create Release
+#触发器,表示只有在创建v开头的分支时才会触发
+on:
+  push:
+    tags:
+      - 'v*'
+#workflow需要的权限
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    #把程序打包成python的可执行文件
+      - name: Create Executable
+        id: create_executable
+        uses: sayyid5416/pyinstaller@v1
+        with:
+          python_ver: '3.12'
+          #入口文件
+          spec: 'main.py'
+          #打包后的压缩包的名字
+          upload_exe_with_name: 'wgk_package'
+          options: --onefile
+    # 创建release
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        #只有创建了tag才会执行
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+        #with用来传递参数，file表示把哪些文件上传到release里面
+        #python打包的文件都在dist目录里面
+          files: ./dist/**
